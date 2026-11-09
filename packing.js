@@ -3166,6 +3166,7 @@ function create_packing(root_url) {
 				httprequest.get_url = function (url, type, post_data, content_type) {
 
 					//console.log("httprequest", url);
+					if (typeof url === "string" && window.HAPPY_ROOT && /^\/(?!\/)/.test(url)) url = window.HAPPY_ROOT + url;   // ("/x" is relative to the site root, the folder of packing.js)
 					return new Promise(function (resolve) {
 						const xtp = new XMLHttpRequest();
 						xtp.onload = function () {
