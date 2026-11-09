@@ -77,6 +77,7 @@ function create_packing(root_url) {
 	
 			//console.log("get_file", [url, type]);
 
+			if (/^\/(?!\/)/.test(url) && root_url) url = root_url + url;
 			return new Promise(function (resolve) {
 				const xtp = new XMLHttpRequest();
 				xtp.onload = function () {
@@ -426,7 +427,7 @@ function create_packing(root_url) {
 		function parse_include(text, entry, base_url, done, _tag) {
 		
 			let res = [], s, ic, h, url, t, aa, force;
-			base_url = base_url.replace(/\/\//g,'/');
+			base_url = base_url.replace(/([^:])\/\/+/g,'$1/');   // ("://" of a full url stays)
 
 			let text2 = " " + text;
 			_tag = _tag || "import";
@@ -9105,7 +9106,19 @@ read() zero-copy (subarray() is a view, not a copy).
 
 let packing;
 if (is_browser) {
-	packing = create_packing("");
+	// The site root is the folder that holds packing.js (so a copy under https://user.github.io/repo/ works): "@/x" and "/x" are relative to it, not to the host.
+	const script_src = (document.currentScript && document.currentScript.src) || "";
+	const site_root = script_src ? script_src.replace(/[?#].*$/, "").replace(/\/[^\/]*$/, "") : "";
+	window.HAPPY_ROOT = window.HAPPY_ROOT || site_root;
+	if (window.HAPPY_ROOT && !window.fetch.__happy_root) {
+		const root_fetch = window.fetch;
+		window.fetch = function (input, init) {
+			if (typeof input === "string" && /^\/(?!\/)/.test(input)) input = window.HAPPY_ROOT + input;
+			return root_fetch.call(this, input, init);
+		};
+		window.fetch.__happy_root = true;
+	}
+	packing = create_packing(window.HAPPY_ROOT);
 	console.log("packing", [packing]);
 }
 else {

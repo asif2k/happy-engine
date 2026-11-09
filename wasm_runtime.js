@@ -62,6 +62,7 @@ const happy_wasm = (function () {
   const base = function () {
     if (typeof self !== "undefined" && self.HAPPY_WASM_BASE) return self.HAPPY_WASM_BASE;
     if (typeof window !== "undefined" && window.HAPPY_WASM_BASE) return window.HAPPY_WASM_BASE;
+    if (typeof window !== "undefined" && window.HAPPY_ROOT) return window.HAPPY_ROOT + "/wasm/";   // (the folder of packing.js: a site under /repo/ keeps its folder)
     return new URL("/wasm/", self.location.href).href;
   };
 
