@@ -33,22 +33,24 @@
       // the worker's actions: system.worker_actions(urls) has it read libraries of actions itself (happy_actions/*.json: the worker registers them by name and compiles an action when it is first used);
       // sp.worker_action_plan(plan) gives it what an action needs of the species: the PLAN that the action runtime makes (action_designer/action_runtime.js, rt.plan(sp): which bones play which role, the arms, the legs' rest
       // places, the body), plain data, with the overlay slot of every bone and the body's gravity added here
+      // a url made absolute for the worker (a blob has no base): "/x" is relative to the site root (window.HAPPY_ROOT, the folder of packing.js), so a site under /repo/ works
+      const happy_abs = function (u) { if (typeof window !== "undefined" && window.HAPPY_ROOT && /^\/(?!\/)/.test(u)) return window.HAPPY_ROOT + u; return new URL(u, location.href).href; };
       system.worker_actions = function (urls) {
         if (!Array.isArray(urls) || urls.some(function (u) { return typeof u !== "string"; })) throw new Error("system: worker_actions: a list of urls of libraries of actions (happy_actions/*.json)");
-        link_post("worker_actions", { call: "happy_worker_actions", urls: urls.map(function (u) { return typeof location !== "undefined" ? new URL(u, location.href).href : u; }) });
+        link_post("worker_actions", { call: "happy_worker_actions", urls: urls.map(function (u) { return typeof location !== "undefined" ? happy_abs(u) : u; }) });
       };
       // THE PACK for the worker: system.worker_pack(url, { gaits: [library names], actions: [set names] }) has the worker read system.bin ITSELF (data.js is in the worker too) and put the gait libraries in its registry and
       // the action sets in its library; the page's `system.use(...)` (system.js) does it for both sides. The url is made absolute (a worker made from a blob has no base of its own)
       system.worker_pack = function (url, what) {
         if (typeof url !== "string" || !what || typeof what !== "object") throw new Error("system: worker_pack(url, { gaits: [names], actions: [names] })");
-        link_post("worker_pack", { call: "happy_worker_pack", url: typeof location !== "undefined" ? new URL(url, location.href).href : url, gaits: what.gaits || [], actions: what.actions || [] });
+        link_post("worker_pack", { call: "happy_worker_pack", url: typeof location !== "undefined" ? happy_abs(url) : url, gaits: what.gaits || [], actions: what.actions || [] });
       };
       // THE WORLD (SYSTEM.md). system.worker_modules(urls | { name: text }): AI blocks as MODULES (world/blocks/*.js: a file that ends with `return { name, params, plug, worker }`; a creature's worker loads them by name with
       // api.blocks.load([...])); a url is a block file or a JSON bundle { format: "system-world-blocks", blocks: { name: text } }. system.worker_world(spec, creature_blocks) installs a world's spec (world/world_spec.js `build().spec`)
       // in the worker: its nav is baked there, its slots, zones and props are what `api.sw` answers from; the creature blocks the WORLD brings go with it. system.worker_world_state(diff) changes what the page's world blocks move
       // ({ gates: [[gate, 0 open | 1 closed | 2 locked]], ent: [[entity, key, value]], scenes: [[scene, 0 active | 1 dormant | 2 unloaded]] }). What the creatures ask of the world (effects, props, interactions, their life) comes back as
       // system.on_world_requests({ n, data, names, names_at }) (world/world_host.js reads it). All of it is ordered with the libraries and the species, as the gaits and the actions are.
-      const absolute = function (u) { return typeof location !== "undefined" ? new URL(u, location.href).href : u; };
+      const absolute = function (u) { return typeof location !== "undefined" ? happy_abs(u) : u; };
       system.worker_modules = function (what) {
         if (Array.isArray(what)) { if (what.some(function (u) { return typeof u !== "string"; })) throw new Error("system: worker_modules: a list of urls"); link_post("worker_modules", { call: "happy_worker_modules", urls: what.map(absolute) }); }
         else if (what && typeof what === "object" && Object.keys(what).every(function (k) { return typeof what[k] === "string"; })) link_post("worker_modules", { call: "happy_worker_modules", urls: [], texts: what });
@@ -180,7 +182,7 @@
           throw new Error("system: worker_gaits: a list of urls of libraries of gait styles (happy_gaits/*.gaits.json)");
         link_post("worker_gaits", {
           call: "happy_worker_gaits", urls: urls.map(function (u) {
-            return typeof location !== "undefined" ? new URL(u, location.href).href : u;
+            return typeof location !== "undefined" ? happy_abs(u) : u;
           })
         });
       };
