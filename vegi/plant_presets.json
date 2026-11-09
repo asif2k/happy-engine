@@ -1,0 +1,2215 @@
+{
+  "format": "vegan plant_props / rich_plant_props presets",
+  "notes": [
+    "generator \"plant\" = blade plants (grass, rosettes): props are the 31 plant_props fields, in plant_system.cpp / PLANT_PROP_NAMES order, for plant_generate. generator \"rich\" = stem + leaves + flower: the 38 rich_plant_props fields for rich_plant_generate. Apply with: for (k in props) binder[k] = props[k].",
+    "Units: 1 unit = 1 m. A habitat covers a size_m x size_m square. Every value lies inside the tests.js slider ranges. density_per_m2 is a typical stand density used by the habitats below, in tufts/plants per square metre.",
+    "Vertex colour alpha carries a per-part wind phase (not opacity); force alpha to 1 when drawing with an alpha-tested material.",
+    "plant_estimate_max_verts ignores the geometry flowerChance adds (e.g. wheat ears), so size output buffers well above it.",
+    "leaf_types holds the leaf cards of the plants (painted by engine.vegi_textures.leaf, see vegi_textures.js: kind = blade / simple / pinnate / trifoliate / parted) and plants[].leaf_texture names the one a plant uses, so several plants can share a card. Load them with engine.vegi_textures.leaf.register_presets(json), then engine.vegi_textures.leaf.pixels(plant.leaf_texture, size) gives { width, height, data }.",
+    "A leaf card shows one leaf, base at the bottom of the canvas, tip at the top, midrib at u = 0.5, as a neutral grey-white picture with an alpha cut-out: the plant's vertex colours multiply it, so draw it with a material that uses vertex colour and alpha test. aspect = blade length / blade width of the plants that share the card: the leaf is drawn in true proportions and the canvas is only as wide as that needs (32 to size pixels wide, e.g. 32 x 256 for a fern frond or a grass blade at size 256), so use size 512 for the finely divided ferns."
+  ],
+  "plant_prop_order": [
+    "bladeLength",
+    "bladeLengthVariance",
+    "bladeWidth",
+    "bladeWidthVariance",
+    "tipTaper",
+    "curveAmount",
+    "curveVariance",
+    "lean",
+    "leanVariance",
+    "twistVariance",
+    "clusterRadius",
+    "vMultiplier",
+    "seed",
+    "bladeColorBaseR",
+    "bladeColorBaseG",
+    "bladeColorBaseB",
+    "bladeColorTipR",
+    "bladeColorTipG",
+    "bladeColorTipB",
+    "colorVariance",
+    "flowerChance",
+    "flowerSize",
+    "flowerColorR",
+    "flowerColorG",
+    "flowerColorB",
+    "bladeCount",
+    "segments",
+    "arrangement",
+    "bladeFold",
+    "tuftRadius",
+    "tuftCount"
+  ],
+  "rich_plant_prop_order": [
+    "stemLength",
+    "stemWidth",
+    "stemLean",
+    "stemCurve",
+    "leafLength",
+    "leafLengthVariance",
+    "leafWidth",
+    "leafWidthVariance",
+    "leafTipTaper",
+    "leafAttachStart",
+    "leafAttachEnd",
+    "leafOutwardAngle",
+    "leafOutwardVariance",
+    "petalLength",
+    "petalWidth",
+    "petalTipTaper",
+    "petalCurl",
+    "flowerRadius",
+    "bloomSize",
+    "vMultiplier",
+    "seed",
+    "stemColorR",
+    "stemColorG",
+    "stemColorB",
+    "leafColorR",
+    "leafColorG",
+    "leafColorB",
+    "petalColorR",
+    "petalColorG",
+    "petalColorB",
+    "colorVariance",
+    "petalPitch",
+    "petalPitchOuter",
+    "petalRadiusInner",
+    "leafCount",
+    "petalCount",
+    "segments",
+    "petalArrangement"
+  ],
+  "leaf_types": {
+    "grass_fine": {
+      "kind": "blade",
+      "aspect": 30,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "edge": 0.1,
+      "veins": 3,
+      "vein": 0.9,
+      "vein_w": 0.1,
+      "rib": 0.12,
+      "rib_shade": 1.1
+    },
+    "grass_blade": {
+      "kind": "blade",
+      "aspect": 50,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "edge": 0.12,
+      "veins": 6,
+      "vein": 0.86,
+      "vein_w": 0.1,
+      "rib": 0.14,
+      "rib_shade": 1.12
+    },
+    "grass_keeled": {
+      "kind": "blade",
+      "aspect": 60,
+      "color": [
+        222,
+        222,
+        222
+      ],
+      "edge": 0.18,
+      "fold": 0.22,
+      "veins": 4,
+      "vein": 0.88,
+      "vein_w": 0.1,
+      "rib": 0.2,
+      "rib_shade": 0.62
+    },
+    "grass_ribbed": {
+      "kind": "blade",
+      "aspect": 90,
+      "color": [
+        220,
+        220,
+        220
+      ],
+      "edge": 0.1,
+      "veins": 12,
+      "vein": 0.78,
+      "vein_w": 0.08,
+      "rib": 0.08,
+      "rib_shade": 1.05
+    },
+    "trifoliate": {
+      "kind": "trifoliate",
+      "aspect": 1.8,
+      "color": [
+        220,
+        220,
+        220
+      ],
+      "r": 0.5,
+      "chevron": true
+    },
+    "fern_frond": {
+      "kind": "pinnate",
+      "aspect": 7.5,
+      "color": [
+        226,
+        226,
+        226
+      ],
+      "pairs": 17,
+      "start": 0.04,
+      "end": 0.08,
+      "len": 1,
+      "angle": 1.15,
+      "taper": 0.65,
+      "terminal": true,
+      "rib": 0.07,
+      "sub": {
+        "pairs": 6,
+        "start": 0.05,
+        "end": 0.12,
+        "len": 0.38,
+        "lw": 0.5,
+        "angle": 1,
+        "taper": 0.3,
+        "terminal": true,
+        "outline": false,
+        "rib": 0.025
+      }
+    },
+    "bracken_frond": {
+      "kind": "pinnate",
+      "aspect": 6,
+      "color": [
+        226,
+        226,
+        226
+      ],
+      "pairs": 13,
+      "start": 0.05,
+      "end": 0.1,
+      "len": 1,
+      "angle": 1.25,
+      "taper": 0.6,
+      "terminal": true,
+      "rib": 0.08,
+      "sub": {
+        "pairs": 6,
+        "start": 0.05,
+        "end": 0.1,
+        "len": 0.5,
+        "lw": 0.45,
+        "angle": 1.1,
+        "taper": 0.5,
+        "terminal": true,
+        "outline": false,
+        "rib": 0.03
+      }
+    },
+    "ovate_ribbed": {
+      "kind": "simple",
+      "aspect": 2.1,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "widest": 0.32,
+      "base": 0.5,
+      "tip": 0.9,
+      "width": 0.97,
+      "par": 4,
+      "rib": 0.14,
+      "vein": 0.78,
+      "vein_w": 0.06,
+      "edge": 0.12,
+      "fold": 0.1
+    },
+    "lanceolate_ribbed": {
+      "kind": "simple",
+      "aspect": 3.7,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "widest": 0.42,
+      "base": 0.9,
+      "tip": 1,
+      "par": 2,
+      "rib": 0.14,
+      "vein": 0.75,
+      "vein_w": 0.07
+    },
+    "spatulate": {
+      "kind": "simple",
+      "aspect": 2.5,
+      "color": [
+        226,
+        226,
+        226
+      ],
+      "widest": 0.78,
+      "base": 3,
+      "tip": 0.45,
+      "pin": 4,
+      "vsweep": 0.15,
+      "teeth": 6,
+      "tooth": "round",
+      "tooth_amp": 0.06,
+      "rib": 0.1
+    },
+    "pinnatifid": {
+      "kind": "pinnate",
+      "aspect": 4,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "core": 0.3,
+      "pairs": 5,
+      "start": 0.1,
+      "end": 0.12,
+      "len": 1,
+      "lw": 0.7,
+      "angle": 1.15,
+      "taper": 0.55,
+      "shape": "tooth",
+      "terminal": true,
+      "rib": 0.07
+    },
+    "runcinate": {
+      "kind": "pinnate",
+      "aspect": 5,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "core": 0.4,
+      "pairs": 5,
+      "start": 0.12,
+      "end": 0.2,
+      "len": 0.8,
+      "lw": 0.5,
+      "angle": 1.95,
+      "taper": -0.25,
+      "shape": "tooth",
+      "terminal": true,
+      "rib": 0.07
+    },
+    "cordate_serrate": {
+      "kind": "simple",
+      "aspect": 2.2,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "widest": 0.28,
+      "base": 0.45,
+      "tip": 1.2,
+      "width": 0.98,
+      "teeth": 14,
+      "tooth": "saw",
+      "tooth_amp": 0.1,
+      "par": 1,
+      "pin": 6,
+      "vsweep": 0.12,
+      "rib": 0.13,
+      "vein": 0.72
+    },
+    "linear": {
+      "kind": "simple",
+      "aspect": 8,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "widest": 0.5,
+      "base": 0.8,
+      "tip": 0.8,
+      "width": 0.9,
+      "rib": 0.16,
+      "rib_shade": 1.15,
+      "edge": 0.15
+    },
+    "strap_parallel": {
+      "kind": "simple",
+      "aspect": 5.5,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "widest": 0.45,
+      "base": 0.7,
+      "tip": 1,
+      "width": 0.95,
+      "par": 4,
+      "rib": 0.1,
+      "vein": 0.88,
+      "vein_w": 0.045,
+      "edge": 0.2,
+      "fold": 0.15
+    },
+    "palmate_parted": {
+      "kind": "parted",
+      "aspect": 2.8,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "lobes": 3,
+      "spread": 0.36,
+      "shrink": 0.5,
+      "lw": 0.34,
+      "hw_max": 0.7,
+      "base_y": 0.12
+    },
+    "ovate_wrinkled": {
+      "kind": "simple",
+      "aspect": 3.1,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "widest": 0.38,
+      "base": 0.65,
+      "tip": 1.1,
+      "width": 0.97,
+      "teeth": 18,
+      "tooth": "round",
+      "tooth_amp": 0.06,
+      "pin": 9,
+      "vsweep": 0.1,
+      "rib": 0.14,
+      "vein": 0.62,
+      "vein_w": 0.055,
+      "edge": 0.1
+    },
+    "pinnate_fine": {
+      "kind": "pinnate",
+      "aspect": 3,
+      "color": [
+        224,
+        224,
+        224
+      ],
+      "pairs": 10,
+      "start": 0.06,
+      "end": 0.1,
+      "len": 1,
+      "lw": 0.3,
+      "angle": 1.2,
+      "taper": 0.3,
+      "terminal": true,
+      "rib": 0.06
+    }
+  },
+  "plants": [
+    {
+      "id": "lawn_grass",
+      "name": "Lawn grass",
+      "scientific_name": "Lolium perenne",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_fine",
+      "description": "Short, dense, mown turf: many fine upright blades per tuft.",
+      "real_world": {
+        "height_m": "0.05-0.12"
+      },
+      "density_per_m2": 140,
+      "generated": {
+        "height": 0.12,
+        "radius": 0.08,
+        "vertices": 648
+      },
+      "props": {
+        "bladeLength": 0.1,
+        "bladeLengthVariance": 0.03,
+        "bladeWidth": 0.004,
+        "bladeWidthVariance": 0.001,
+        "tipTaper": 0.05,
+        "curveAmount": 0.25,
+        "curveVariance": 0.1,
+        "lean": 0.35,
+        "leanVariance": 0.3,
+        "twistVariance": 0.6,
+        "clusterRadius": 0.06,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.08,
+        "bladeColorBaseG": 0.26,
+        "bladeColorBaseB": 0.05,
+        "bladeColorTipR": 0.3,
+        "bladeColorTipG": 0.5,
+        "bladeColorTipB": 0.12,
+        "colorVariance": 0.1,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 18,
+        "segments": 3,
+        "arrangement": 0,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "meadow_grass",
+      "name": "Meadow grass",
+      "scientific_name": "Poa pratensis",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_blade",
+      "description": "Soft tufts of long arching blades with a few seed heads.",
+      "real_world": {
+        "height_m": "0.4-0.8"
+      },
+      "density_per_m2": 16,
+      "generated": {
+        "height": 0.68,
+        "radius": 0.42,
+        "vertices": 2040
+      },
+      "props": {
+        "bladeLength": 0.55,
+        "bladeLengthVariance": 0.2,
+        "bladeWidth": 0.01,
+        "bladeWidthVariance": 0.003,
+        "tipTaper": 0.06,
+        "curveAmount": 0.4,
+        "curveVariance": 0.15,
+        "lean": 0.3,
+        "leanVariance": 0.25,
+        "twistVariance": 1,
+        "clusterRadius": 0.22,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.14,
+        "bladeColorBaseG": 0.32,
+        "bladeColorBaseB": 0.07,
+        "bladeColorTipR": 0.5,
+        "bladeColorTipG": 0.6,
+        "bladeColorTipB": 0.22,
+        "colorVariance": 0.1,
+        "flowerChance": 0.12,
+        "flowerSize": 0.014,
+        "flowerColorR": 0.72,
+        "flowerColorG": 0.62,
+        "flowerColorB": 0.34,
+        "bladeCount": 34,
+        "segments": 5,
+        "arrangement": 0,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "tussock_grass",
+      "name": "Tussock grass",
+      "scientific_name": "Cortaderia / Stipa",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_keeled",
+      "description": "Large fountain-shaped clumps of long folded blades with straw-gold tips.",
+      "real_world": {
+        "height_m": "0.9-1.6"
+      },
+      "density_per_m2": 1.2,
+      "generated": {
+        "height": 1.31,
+        "radius": 1.12,
+        "vertices": 5040
+      },
+      "props": {
+        "bladeLength": 1.2,
+        "bladeLengthVariance": 0.3,
+        "bladeWidth": 0.018,
+        "bladeWidthVariance": 0.005,
+        "tipTaper": 0.03,
+        "curveAmount": 0.6,
+        "curveVariance": 0.2,
+        "lean": 0.45,
+        "leanVariance": 0.3,
+        "twistVariance": 1.6,
+        "clusterRadius": 0.35,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.26,
+        "bladeColorBaseG": 0.36,
+        "bladeColorBaseB": 0.1,
+        "bladeColorTipR": 0.8,
+        "bladeColorTipG": 0.7,
+        "bladeColorTipB": 0.34,
+        "colorVariance": 0.08,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 70,
+        "segments": 6,
+        "arrangement": 0,
+        "bladeFold": 0.4,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "wheat",
+      "name": "Wheat",
+      "scientific_name": "Triticum aestivum",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_blade",
+      "description": "Upright golden stalks with leaf blades and grain ears.",
+      "real_world": {
+        "height_m": "0.7-1.0"
+      },
+      "density_per_m2": 7,
+      "generated": {
+        "height": 1.01,
+        "radius": 0.37,
+        "vertices": 4968
+      },
+      "props": {
+        "bladeLength": 0.85,
+        "bladeLengthVariance": 0.12,
+        "bladeWidth": 0.009,
+        "bladeWidthVariance": 0.002,
+        "tipTaper": 0.08,
+        "curveAmount": 0.12,
+        "curveVariance": 0.08,
+        "lean": 0.1,
+        "leanVariance": 0.12,
+        "twistVariance": 1.2,
+        "clusterRadius": 0.3,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.42,
+        "bladeColorBaseG": 0.46,
+        "bladeColorBaseB": 0.14,
+        "bladeColorTipR": 0.88,
+        "bladeColorTipG": 0.74,
+        "bladeColorTipB": 0.32,
+        "colorVariance": 0.06,
+        "flowerChance": 1,
+        "flowerSize": 0.026,
+        "flowerColorR": 0.86,
+        "flowerColorG": 0.7,
+        "flowerColorB": 0.28,
+        "bladeCount": 46,
+        "segments": 6,
+        "arrangement": 0,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "white_clover",
+      "name": "White clover",
+      "scientific_name": "Trifolium repens",
+      "kind": "rosette",
+      "generator": "plant",
+      "leaf_texture": "trifoliate",
+      "description": "Low rosettes of broad leaflets with white flower heads.",
+      "real_world": {
+        "height_m": "0.05-0.15"
+      },
+      "density_per_m2": 45,
+      "generated": {
+        "height": 0.04,
+        "radius": 0.1,
+        "vertices": 360
+      },
+      "props": {
+        "bladeLength": 0.09,
+        "bladeLengthVariance": 0.015,
+        "bladeWidth": 0.05,
+        "bladeWidthVariance": 0.008,
+        "tipTaper": 0.35,
+        "curveAmount": 0.1,
+        "curveVariance": 0.05,
+        "lean": 1.15,
+        "leanVariance": 0.2,
+        "twistVariance": 0.4,
+        "clusterRadius": 0.08,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.1,
+        "bladeColorBaseG": 0.32,
+        "bladeColorBaseB": 0.08,
+        "bladeColorTipR": 0.2,
+        "bladeColorTipG": 0.5,
+        "bladeColorTipB": 0.14,
+        "colorVariance": 0.08,
+        "flowerChance": 0.22,
+        "flowerSize": 0.013,
+        "flowerColorR": 0.96,
+        "flowerColorG": 0.96,
+        "flowerColorB": 0.94,
+        "bladeCount": 10,
+        "segments": 3,
+        "arrangement": 1,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "fern",
+      "name": "Fern",
+      "scientific_name": "Dryopteris filix-mas",
+      "kind": "rosette",
+      "generator": "plant",
+      "leaf_texture": "fern_frond",
+      "description": "Shuttlecock of long arching fronds fanning from a single crown.",
+      "real_world": {
+        "height_m": "0.6-1.0"
+      },
+      "density_per_m2": 1.5,
+      "generated": {
+        "height": 0.56,
+        "radius": 0.75,
+        "vertices": 1344
+      },
+      "props": {
+        "bladeLength": 0.75,
+        "bladeLengthVariance": 0.15,
+        "bladeWidth": 0.1,
+        "bladeWidthVariance": 0.02,
+        "tipTaper": 0.08,
+        "curveAmount": 0.65,
+        "curveVariance": 0.15,
+        "lean": 0.85,
+        "leanVariance": 0.15,
+        "twistVariance": 0.2,
+        "clusterRadius": 0.05,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.07,
+        "bladeColorBaseG": 0.26,
+        "bladeColorBaseB": 0.06,
+        "bladeColorTipR": 0.22,
+        "bladeColorTipG": 0.5,
+        "bladeColorTipB": 0.14,
+        "colorVariance": 0.08,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 14,
+        "segments": 8,
+        "arrangement": 1,
+        "bladeFold": 0.3,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "reed",
+      "name": "Reed",
+      "scientific_name": "Phragmites australis",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_keeled",
+      "description": "Dense stand of tall stiff blades with little arch, in tight clumps.",
+      "real_world": {
+        "height_m": "1.5-3.0 (scaled)"
+      },
+      "density_per_m2": 4,
+      "generated": {
+        "height": 1.73,
+        "radius": 0.39,
+        "vertices": 3696
+      },
+      "props": {
+        "bladeLength": 1.5,
+        "bladeLengthVariance": 0.3,
+        "bladeWidth": 0.03,
+        "bladeWidthVariance": 0.006,
+        "tipTaper": 0.04,
+        "curveAmount": 0.18,
+        "curveVariance": 0.1,
+        "lean": 0.12,
+        "leanVariance": 0.1,
+        "twistVariance": 1.4,
+        "clusterRadius": 0.14,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.24,
+        "bladeColorBaseG": 0.4,
+        "bladeColorBaseB": 0.12,
+        "bladeColorTipR": 0.55,
+        "bladeColorTipG": 0.62,
+        "bladeColorTipB": 0.24,
+        "colorVariance": 0.08,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 44,
+        "segments": 7,
+        "arrangement": 0,
+        "bladeFold": 0.2,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "daisy",
+      "name": "Daisy",
+      "scientific_name": "Bellis perennis",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "spatulate",
+      "description": "Low flower on a short stem with many white ray petals around a yellow eye.",
+      "real_world": {
+        "height_m": "0.05-0.15"
+      },
+      "density_per_m2": 3,
+      "generated": {
+        "height": 0.12,
+        "radius": 0.06,
+        "vertices": 1044
+      },
+      "props": {
+        "stemLength": 0.12,
+        "stemWidth": 0.006,
+        "stemLean": 0.12,
+        "stemCurve": 0.05,
+        "leafLength": 0.05,
+        "leafLengthVariance": 0.01,
+        "leafWidth": 0.02,
+        "leafWidthVariance": 0.004,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.25,
+        "leafOutwardAngle": 1.3,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.035,
+        "petalWidth": 0.009,
+        "petalTipTaper": 0.4,
+        "petalCurl": 0.05,
+        "flowerRadius": 0.008,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.3,
+        "stemColorG": 0.5,
+        "stemColorB": 0.2,
+        "leafColorR": 0.16,
+        "leafColorG": 0.42,
+        "leafColorB": 0.12,
+        "petalColorR": 0.97,
+        "petalColorG": 0.97,
+        "petalColorB": 0.95,
+        "colorVariance": 0.05,
+        "petalPitch": 1.45,
+        "petalPitchOuter": 1.45,
+        "petalRadiusInner": 0.006,
+        "leafCount": 6,
+        "petalCount": 22,
+        "segments": 3,
+        "petalArrangement": 0
+      }
+    },
+    {
+      "id": "poppy",
+      "name": "Poppy",
+      "scientific_name": "Papaver rhoeas",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "pinnatifid",
+      "description": "Slender hairy stem topped by four wide papery scarlet petals.",
+      "real_world": {
+        "height_m": "0.3-0.7"
+      },
+      "density_per_m2": 1.2,
+      "generated": {
+        "height": 0.52,
+        "radius": 0.13,
+        "vertices": 480
+      },
+      "props": {
+        "stemLength": 0.5,
+        "stemWidth": 0.006,
+        "stemLean": 0.15,
+        "stemCurve": 0.15,
+        "leafLength": 0.1,
+        "leafLengthVariance": 0.03,
+        "leafWidth": 0.025,
+        "leafWidthVariance": 0.008,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0.05,
+        "leafAttachEnd": 0.5,
+        "leafOutwardAngle": 1,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.045,
+        "petalWidth": 0.05,
+        "petalTipTaper": 0.6,
+        "petalCurl": 0.2,
+        "flowerRadius": 0.012,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.32,
+        "stemColorG": 0.5,
+        "stemColorB": 0.2,
+        "leafColorR": 0.2,
+        "leafColorG": 0.42,
+        "leafColorB": 0.14,
+        "petalColorR": 0.9,
+        "petalColorG": 0.1,
+        "petalColorB": 0.07,
+        "colorVariance": 0.05,
+        "petalPitch": 0.85,
+        "petalPitchOuter": 0.85,
+        "petalRadiusInner": 0.01,
+        "leafCount": 5,
+        "petalCount": 4,
+        "segments": 4,
+        "petalArrangement": 0
+      }
+    },
+    {
+      "id": "sunflower",
+      "name": "Sunflower",
+      "scientific_name": "Helianthus annuus",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "cordate_serrate",
+      "description": "Tall thick stem, broad leaves and a large disc ringed with golden ray petals.",
+      "real_world": {
+        "height_m": "1.5-2.5"
+      },
+      "density_per_m2": 0.3,
+      "generated": {
+        "height": 1.72,
+        "radius": 0.36,
+        "vertices": 1920
+      },
+      "props": {
+        "stemLength": 1.7,
+        "stemWidth": 0.03,
+        "stemLean": 0.06,
+        "stemCurve": 0.12,
+        "leafLength": 0.26,
+        "leafLengthVariance": 0.05,
+        "leafWidth": 0.12,
+        "leafWidthVariance": 0.02,
+        "leafTipTaper": 0.3,
+        "leafAttachStart": 0.1,
+        "leafAttachEnd": 0.8,
+        "leafOutwardAngle": 1,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.11,
+        "petalWidth": 0.03,
+        "petalTipTaper": 0.5,
+        "petalCurl": 0.1,
+        "flowerRadius": 0.08,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.28,
+        "stemColorG": 0.45,
+        "stemColorB": 0.14,
+        "leafColorR": 0.16,
+        "leafColorG": 0.4,
+        "leafColorB": 0.1,
+        "petalColorR": 0.98,
+        "petalColorG": 0.78,
+        "petalColorB": 0.06,
+        "colorVariance": 0.05,
+        "petalPitch": 1.4,
+        "petalPitchOuter": 1.4,
+        "petalRadiusInner": 0.07,
+        "leafCount": 7,
+        "petalCount": 24,
+        "segments": 5,
+        "petalArrangement": 0
+      }
+    },
+    {
+      "id": "lavender",
+      "name": "Lavender",
+      "scientific_name": "Lavandula angustifolia",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "linear",
+      "description": "Narrow grey-green leaves and a spiral spike of small purple florets.",
+      "real_world": {
+        "height_m": "0.4-0.7"
+      },
+      "density_per_m2": 1.5,
+      "generated": {
+        "height": 0.57,
+        "radius": 0.12,
+        "vertices": 1260
+      },
+      "props": {
+        "stemLength": 0.55,
+        "stemWidth": 0.005,
+        "stemLean": 0.12,
+        "stemCurve": 0.08,
+        "leafLength": 0.09,
+        "leafLengthVariance": 0.02,
+        "leafWidth": 0.01,
+        "leafWidthVariance": 0.003,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.45,
+        "leafOutwardAngle": 0.8,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.04,
+        "petalWidth": 0.013,
+        "petalTipTaper": 0.5,
+        "petalCurl": 0.05,
+        "flowerRadius": 0.012,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.4,
+        "stemColorG": 0.5,
+        "stemColorB": 0.3,
+        "leafColorR": 0.34,
+        "leafColorG": 0.46,
+        "leafColorB": 0.3,
+        "petalColorR": 0.52,
+        "petalColorG": 0.34,
+        "petalColorB": 0.8,
+        "colorVariance": 0.05,
+        "petalPitch": 0.9,
+        "petalPitchOuter": 0.9,
+        "petalRadiusInner": 0.006,
+        "leafCount": 10,
+        "petalCount": 24,
+        "segments": 3,
+        "petalArrangement": 1
+      }
+    },
+    {
+      "id": "tulip",
+      "name": "Tulip",
+      "scientific_name": "Tulipa gesneriana",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "strap_parallel",
+      "description": "Smooth upright stem, a few broad basal leaves and a closed cup of six petals.",
+      "real_world": {
+        "height_m": "0.3-0.5"
+      },
+      "density_per_m2": 0.8,
+      "generated": {
+        "height": 0.44,
+        "radius": 0.14,
+        "vertices": 480
+      },
+      "props": {
+        "stemLength": 0.38,
+        "stemWidth": 0.008,
+        "stemLean": 0.05,
+        "stemCurve": 0.04,
+        "leafLength": 0.22,
+        "leafLengthVariance": 0.03,
+        "leafWidth": 0.04,
+        "leafWidthVariance": 0.005,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.3,
+        "leafOutwardAngle": 0.55,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.06,
+        "petalWidth": 0.035,
+        "petalTipTaper": 0.4,
+        "petalCurl": -0.05,
+        "flowerRadius": 0.012,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.3,
+        "stemColorG": 0.52,
+        "stemColorB": 0.22,
+        "leafColorR": 0.22,
+        "leafColorG": 0.46,
+        "leafColorB": 0.2,
+        "petalColorR": 0.88,
+        "petalColorG": 0.15,
+        "petalColorB": 0.3,
+        "colorVariance": 0.05,
+        "petalPitch": 0.2,
+        "petalPitchOuter": 0.2,
+        "petalRadiusInner": 0.012,
+        "leafCount": 3,
+        "petalCount": 6,
+        "segments": 4,
+        "petalArrangement": 0
+      }
+    },
+    {
+      "id": "dandelion",
+      "name": "Dandelion",
+      "scientific_name": "Taraxacum officinale",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "runcinate",
+      "description": "Ground rosette of long toothed leaves and a bare stem carrying one dense yellow head.",
+      "real_world": {
+        "height_m": "0.1-0.3"
+      },
+      "density_per_m2": 2,
+      "generated": {
+        "height": 0.24,
+        "radius": 0.17,
+        "vertices": 1224
+      },
+      "props": {
+        "stemLength": 0.22,
+        "stemWidth": 0.006,
+        "stemLean": 0.08,
+        "stemCurve": 0.05,
+        "leafLength": 0.15,
+        "leafLengthVariance": 0.04,
+        "leafWidth": 0.03,
+        "leafWidthVariance": 0.006,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.03,
+        "leafOutwardAngle": 1.2,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.045,
+        "petalWidth": 0.006,
+        "petalTipTaper": 0.3,
+        "petalCurl": 0,
+        "flowerRadius": 0.005,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.42,
+        "stemColorG": 0.52,
+        "stemColorB": 0.28,
+        "leafColorR": 0.2,
+        "leafColorG": 0.44,
+        "leafColorB": 0.14,
+        "petalColorR": 0.98,
+        "petalColorG": 0.84,
+        "petalColorB": 0.08,
+        "colorVariance": 0.05,
+        "petalPitch": 1,
+        "petalPitchOuter": 1.2,
+        "petalRadiusInner": 0.004,
+        "leafCount": 9,
+        "petalCount": 24,
+        "segments": 3,
+        "petalArrangement": 1
+      }
+    },
+    {
+      "id": "cornflower",
+      "name": "Cornflower",
+      "scientific_name": "Centaurea cyanus",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "linear",
+      "description": "Thin wiry stem with narrow leaves and a ragged blue flower head.",
+      "real_world": {
+        "height_m": "0.3-0.8"
+      },
+      "density_per_m2": 1,
+      "generated": {
+        "height": 0.57,
+        "radius": 0.14,
+        "vertices": 864
+      },
+      "props": {
+        "stemLength": 0.55,
+        "stemWidth": 0.005,
+        "stemLean": 0.15,
+        "stemCurve": 0.12,
+        "leafLength": 0.09,
+        "leafLengthVariance": 0.02,
+        "leafWidth": 0.012,
+        "leafWidthVariance": 0.003,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0.1,
+        "leafAttachEnd": 0.7,
+        "leafOutwardAngle": 0.9,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.045,
+        "petalWidth": 0.01,
+        "petalTipTaper": 0.4,
+        "petalCurl": 0.1,
+        "flowerRadius": 0.01,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.4,
+        "stemColorG": 0.52,
+        "stemColorB": 0.3,
+        "leafColorR": 0.34,
+        "leafColorG": 0.46,
+        "leafColorB": 0.28,
+        "petalColorR": 0.22,
+        "petalColorG": 0.34,
+        "petalColorB": 0.86,
+        "colorVariance": 0.05,
+        "petalPitch": 1,
+        "petalPitchOuter": 1.3,
+        "petalRadiusInner": 0.008,
+        "leafCount": 7,
+        "petalCount": 16,
+        "segments": 3,
+        "petalArrangement": 0
+      }
+    },
+    {
+      "id": "pampas_grass",
+      "name": "Pampas grass",
+      "scientific_name": "Cortaderia selloana",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_keeled",
+      "description": "Huge fountain of long, razor-edged blades carrying tall cream plumes.",
+      "real_world": {
+        "height_m": "2-3 (scaled)"
+      },
+      "density_per_m2": 0.5,
+      "generated": {
+        "height": 1.94,
+        "radius": 1.56,
+        "vertices": 5832
+      },
+      "props": {
+        "bladeLength": 1.7,
+        "bladeLengthVariance": 0.3,
+        "bladeWidth": 0.022,
+        "bladeWidthVariance": 0.005,
+        "tipTaper": 0.03,
+        "curveAmount": 0.7,
+        "curveVariance": 0.2,
+        "lean": 0.45,
+        "leanVariance": 0.3,
+        "twistVariance": 1.6,
+        "clusterRadius": 0.4,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.26,
+        "bladeColorBaseG": 0.38,
+        "bladeColorBaseB": 0.13,
+        "bladeColorTipR": 0.76,
+        "bladeColorTipG": 0.72,
+        "bladeColorTipB": 0.46,
+        "colorVariance": 0.08,
+        "flowerChance": 0.2,
+        "flowerSize": 0.12,
+        "flowerColorR": 0.93,
+        "flowerColorG": 0.9,
+        "flowerColorB": 0.8,
+        "bladeCount": 80,
+        "segments": 6,
+        "arrangement": 0,
+        "bladeFold": 0.4,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "fountain_grass",
+      "name": "Fountain grass",
+      "scientific_name": "Pennisetum alopecuroides",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_fine",
+      "description": "Dense arching mound of fine blades with soft pinkish bottlebrush plumes.",
+      "real_world": {
+        "height_m": "0.6-1.0"
+      },
+      "density_per_m2": 2.5,
+      "generated": {
+        "height": 0.96,
+        "radius": 0.74,
+        "vertices": 5580
+      },
+      "props": {
+        "bladeLength": 0.8,
+        "bladeLengthVariance": 0.12,
+        "bladeWidth": 0.008,
+        "bladeWidthVariance": 0.002,
+        "tipTaper": 0.05,
+        "curveAmount": 0.85,
+        "curveVariance": 0.15,
+        "lean": 0.4,
+        "leanVariance": 0.2,
+        "twistVariance": 1.2,
+        "clusterRadius": 0.2,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.28,
+        "bladeColorBaseG": 0.4,
+        "bladeColorBaseB": 0.12,
+        "bladeColorTipR": 0.7,
+        "bladeColorTipG": 0.62,
+        "bladeColorTipB": 0.4,
+        "colorVariance": 0.07,
+        "flowerChance": 0.6,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.82,
+        "flowerColorG": 0.64,
+        "flowerColorB": 0.62,
+        "bladeCount": 60,
+        "segments": 6,
+        "arrangement": 0,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "blue_fescue",
+      "name": "Blue fescue",
+      "scientific_name": "Festuca glauca",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_fine",
+      "description": "Tight little hummocks of fine blue-grey blades.",
+      "real_world": {
+        "height_m": "0.2-0.3"
+      },
+      "density_per_m2": 14,
+      "generated": {
+        "height": 0.32,
+        "radius": 0.21,
+        "vertices": 3360
+      },
+      "props": {
+        "bladeLength": 0.28,
+        "bladeLengthVariance": 0.06,
+        "bladeWidth": 0.004,
+        "bladeWidthVariance": 0.001,
+        "tipTaper": 0.06,
+        "curveAmount": 0.55,
+        "curveVariance": 0.12,
+        "lean": 0.3,
+        "leanVariance": 0.2,
+        "twistVariance": 0.8,
+        "clusterRadius": 0.08,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.3,
+        "bladeColorBaseG": 0.44,
+        "bladeColorBaseB": 0.46,
+        "bladeColorTipR": 0.55,
+        "bladeColorTipG": 0.68,
+        "bladeColorTipB": 0.74,
+        "colorVariance": 0.06,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 70,
+        "segments": 4,
+        "arrangement": 0,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "sedge",
+      "name": "Sedge",
+      "scientific_name": "Carex pendula",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_keeled",
+      "description": "Dark green, folded blades that droop in graceful arcs; a woodland and stream-side plant.",
+      "real_world": {
+        "height_m": "0.4-0.8"
+      },
+      "density_per_m2": 4,
+      "generated": {
+        "height": 0.57,
+        "radius": 0.54,
+        "vertices": 2400
+      },
+      "props": {
+        "bladeLength": 0.55,
+        "bladeLengthVariance": 0.12,
+        "bladeWidth": 0.012,
+        "bladeWidthVariance": 0.003,
+        "tipTaper": 0.05,
+        "curveAmount": 0.8,
+        "curveVariance": 0.15,
+        "lean": 0.5,
+        "leanVariance": 0.25,
+        "twistVariance": 0.8,
+        "clusterRadius": 0.15,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.1,
+        "bladeColorBaseG": 0.28,
+        "bladeColorBaseB": 0.1,
+        "bladeColorTipR": 0.3,
+        "bladeColorTipG": 0.5,
+        "bladeColorTipB": 0.18,
+        "colorVariance": 0.08,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 40,
+        "segments": 5,
+        "arrangement": 0,
+        "bladeFold": 0.3,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "oats",
+      "name": "Oats",
+      "scientific_name": "Avena sativa",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_blade",
+      "description": "Slender straw-coloured stalks with loose, nodding seed panicles.",
+      "real_world": {
+        "height_m": "0.8-1.2"
+      },
+      "density_per_m2": 7,
+      "generated": {
+        "height": 1.12,
+        "radius": 0.44,
+        "vertices": 4752
+      },
+      "props": {
+        "bladeLength": 0.95,
+        "bladeLengthVariance": 0.12,
+        "bladeWidth": 0.01,
+        "bladeWidthVariance": 0.002,
+        "tipTaper": 0.08,
+        "curveAmount": 0.22,
+        "curveVariance": 0.1,
+        "lean": 0.12,
+        "leanVariance": 0.12,
+        "twistVariance": 1.2,
+        "clusterRadius": 0.3,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.4,
+        "bladeColorBaseG": 0.48,
+        "bladeColorBaseB": 0.18,
+        "bladeColorTipR": 0.78,
+        "bladeColorTipG": 0.76,
+        "bladeColorTipB": 0.4,
+        "colorVariance": 0.06,
+        "flowerChance": 1,
+        "flowerSize": 0.03,
+        "flowerColorR": 0.84,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.52,
+        "bladeCount": 44,
+        "segments": 6,
+        "arrangement": 0,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "barley",
+      "name": "Barley",
+      "scientific_name": "Hordeum vulgare",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_blade",
+      "description": "Stiff upright stalks topped by dense, bristly, golden ears.",
+      "real_world": {
+        "height_m": "0.7-1.0"
+      },
+      "density_per_m2": 7,
+      "generated": {
+        "height": 0.95,
+        "radius": 0.35,
+        "vertices": 4968
+      },
+      "props": {
+        "bladeLength": 0.78,
+        "bladeLengthVariance": 0.1,
+        "bladeWidth": 0.012,
+        "bladeWidthVariance": 0.002,
+        "tipTaper": 0.08,
+        "curveAmount": 0.12,
+        "curveVariance": 0.08,
+        "lean": 0.08,
+        "leanVariance": 0.1,
+        "twistVariance": 1.2,
+        "clusterRadius": 0.3,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.42,
+        "bladeColorBaseG": 0.48,
+        "bladeColorBaseB": 0.16,
+        "bladeColorTipR": 0.86,
+        "bladeColorTipG": 0.76,
+        "bladeColorTipB": 0.36,
+        "colorVariance": 0.06,
+        "flowerChance": 1,
+        "flowerSize": 0.036,
+        "flowerColorR": 0.88,
+        "flowerColorG": 0.74,
+        "flowerColorB": 0.34,
+        "bladeCount": 46,
+        "segments": 6,
+        "arrangement": 0,
+        "bladeFold": 0,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "marram_grass",
+      "name": "Marram grass",
+      "scientific_name": "Ammophila arenaria",
+      "kind": "grass",
+      "generator": "plant",
+      "leaf_texture": "grass_ribbed",
+      "description": "Stiff grey-green, tightly rolled blades that bind coastal dunes.",
+      "real_world": {
+        "height_m": "0.5-1.0"
+      },
+      "density_per_m2": 3,
+      "generated": {
+        "height": 0.8,
+        "radius": 0.44,
+        "vertices": 3300
+      },
+      "props": {
+        "bladeLength": 0.7,
+        "bladeLengthVariance": 0.15,
+        "bladeWidth": 0.008,
+        "bladeWidthVariance": 0.002,
+        "tipTaper": 0.04,
+        "curveAmount": 0.3,
+        "curveVariance": 0.12,
+        "lean": 0.25,
+        "leanVariance": 0.2,
+        "twistVariance": 1,
+        "clusterRadius": 0.2,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.36,
+        "bladeColorBaseG": 0.46,
+        "bladeColorBaseB": 0.28,
+        "bladeColorTipR": 0.7,
+        "bladeColorTipG": 0.72,
+        "bladeColorTipB": 0.5,
+        "colorVariance": 0.08,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 55,
+        "segments": 5,
+        "arrangement": 0,
+        "bladeFold": 0.3,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "bracken",
+      "name": "Bracken",
+      "scientific_name": "Pteridium aquilinum",
+      "kind": "rosette",
+      "generator": "plant",
+      "leaf_texture": "bracken_frond",
+      "description": "Tall, coarse, wide-spreading fronds that unfurl from the ground in colonies.",
+      "real_world": {
+        "height_m": "0.8-1.8 (scaled)"
+      },
+      "density_per_m2": 0.6,
+      "generated": {
+        "height": 0.97,
+        "radius": 1.06,
+        "vertices": 1152
+      },
+      "props": {
+        "bladeLength": 1.2,
+        "bladeLengthVariance": 0.2,
+        "bladeWidth": 0.2,
+        "bladeWidthVariance": 0.04,
+        "tipTaper": 0.1,
+        "curveAmount": 0.55,
+        "curveVariance": 0.15,
+        "lean": 0.75,
+        "leanVariance": 0.15,
+        "twistVariance": 0.3,
+        "clusterRadius": 0.08,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.18,
+        "bladeColorBaseG": 0.34,
+        "bladeColorBaseB": 0.08,
+        "bladeColorTipR": 0.4,
+        "bladeColorTipG": 0.56,
+        "bladeColorTipB": 0.16,
+        "colorVariance": 0.08,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 12,
+        "segments": 8,
+        "arrangement": 1,
+        "bladeFold": 0.25,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "hosta",
+      "name": "Hosta",
+      "scientific_name": "Hosta sieboldiana",
+      "kind": "rosette",
+      "generator": "plant",
+      "leaf_texture": "ovate_ribbed",
+      "description": "Mound of broad, ribbed, blue-green leaves; a shade-garden staple.",
+      "real_world": {
+        "height_m": "0.3-0.6"
+      },
+      "density_per_m2": 1.2,
+      "generated": {
+        "height": 0.3,
+        "radius": 0.4,
+        "vertices": 672
+      },
+      "props": {
+        "bladeLength": 0.42,
+        "bladeLengthVariance": 0.06,
+        "bladeWidth": 0.2,
+        "bladeWidthVariance": 0.03,
+        "tipTaper": 0.3,
+        "curveAmount": 0.45,
+        "curveVariance": 0.12,
+        "lean": 0.9,
+        "leanVariance": 0.2,
+        "twistVariance": 0.3,
+        "clusterRadius": 0.05,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.12,
+        "bladeColorBaseG": 0.3,
+        "bladeColorBaseB": 0.18,
+        "bladeColorTipR": 0.3,
+        "bladeColorTipG": 0.52,
+        "bladeColorTipB": 0.3,
+        "colorVariance": 0.08,
+        "flowerChance": 0,
+        "flowerSize": 0.05,
+        "flowerColorR": 0.9,
+        "flowerColorG": 0.8,
+        "flowerColorB": 0.2,
+        "bladeCount": 14,
+        "segments": 4,
+        "arrangement": 1,
+        "bladeFold": 0.2,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "plantain",
+      "name": "Ribwort plantain",
+      "scientific_name": "Plantago lanceolata",
+      "kind": "rosette",
+      "generator": "plant",
+      "leaf_texture": "lanceolate_ribbed",
+      "description": "Low rosette of ribbed lance leaves and short brown flower spikes on bare stalks.",
+      "real_world": {
+        "height_m": "0.1-0.4"
+      },
+      "density_per_m2": 8,
+      "generated": {
+        "height": 0.14,
+        "radius": 0.22,
+        "vertices": 576
+      },
+      "props": {
+        "bladeLength": 0.22,
+        "bladeLengthVariance": 0.04,
+        "bladeWidth": 0.06,
+        "bladeWidthVariance": 0.01,
+        "tipTaper": 0.25,
+        "curveAmount": 0.3,
+        "curveVariance": 0.1,
+        "lean": 1,
+        "leanVariance": 0.2,
+        "twistVariance": 0.4,
+        "clusterRadius": 0.05,
+        "vMultiplier": 1,
+        "seed": 5,
+        "bladeColorBaseR": 0.12,
+        "bladeColorBaseG": 0.3,
+        "bladeColorBaseB": 0.08,
+        "bladeColorTipR": 0.26,
+        "bladeColorTipG": 0.46,
+        "bladeColorTipB": 0.14,
+        "colorVariance": 0.08,
+        "flowerChance": 0.5,
+        "flowerSize": 0.02,
+        "flowerColorR": 0.45,
+        "flowerColorG": 0.42,
+        "flowerColorB": 0.26,
+        "bladeCount": 12,
+        "segments": 4,
+        "arrangement": 1,
+        "bladeFold": 0.2,
+        "tuftRadius": 0.3,
+        "tuftCount": 1
+      }
+    },
+    {
+      "id": "buttercup",
+      "name": "Buttercup",
+      "scientific_name": "Ranunculus acris",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "palmate_parted",
+      "description": "Slender branching stem with small glossy five-petalled golden cups.",
+      "real_world": {
+        "height_m": "0.3-0.6"
+      },
+      "density_per_m2": 2,
+      "generated": {
+        "height": 0.39,
+        "radius": 0.08,
+        "vertices": 432
+      },
+      "props": {
+        "stemLength": 0.38,
+        "stemWidth": 0.004,
+        "stemLean": 0.12,
+        "stemCurve": 0.1,
+        "leafLength": 0.07,
+        "leafLengthVariance": 0.02,
+        "leafWidth": 0.025,
+        "leafWidthVariance": 0.005,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.35,
+        "leafOutwardAngle": 1,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.02,
+        "petalWidth": 0.018,
+        "petalTipTaper": 0.3,
+        "petalCurl": 0.1,
+        "flowerRadius": 0.006,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.34,
+        "stemColorG": 0.5,
+        "stemColorB": 0.22,
+        "leafColorR": 0.18,
+        "leafColorG": 0.42,
+        "leafColorB": 0.12,
+        "petalColorR": 0.98,
+        "petalColorG": 0.86,
+        "petalColorB": 0.1,
+        "colorVariance": 0.05,
+        "petalPitch": 0.9,
+        "petalPitchOuter": 0.9,
+        "petalRadiusInner": 0.005,
+        "leafCount": 6,
+        "petalCount": 5,
+        "segments": 3,
+        "petalArrangement": 0
+      }
+    },
+    {
+      "id": "foxglove",
+      "name": "Foxglove",
+      "scientific_name": "Digitalis purpurea",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "ovate_wrinkled",
+      "description": "Tall spire of hanging pink-purple bells above a rosette of woolly leaves.",
+      "real_world": {
+        "height_m": "0.8-1.5"
+      },
+      "density_per_m2": 0.4,
+      "generated": {
+        "height": 1.12,
+        "radius": 0.22,
+        "vertices": 1584
+      },
+      "props": {
+        "stemLength": 1.1,
+        "stemWidth": 0.01,
+        "stemLean": 0.06,
+        "stemCurve": 0.06,
+        "leafLength": 0.25,
+        "leafLengthVariance": 0.05,
+        "leafWidth": 0.08,
+        "leafWidthVariance": 0.015,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.3,
+        "leafOutwardAngle": 0.9,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.05,
+        "petalWidth": 0.02,
+        "petalTipTaper": 0.4,
+        "petalCurl": 0.1,
+        "flowerRadius": 0.02,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.34,
+        "stemColorG": 0.5,
+        "stemColorB": 0.26,
+        "leafColorR": 0.2,
+        "leafColorG": 0.4,
+        "leafColorB": 0.16,
+        "petalColorR": 0.78,
+        "petalColorG": 0.4,
+        "petalColorB": 0.62,
+        "colorVariance": 0.05,
+        "petalPitch": 1.1,
+        "petalPitchOuter": 1.1,
+        "petalRadiusInner": 0.012,
+        "leafCount": 8,
+        "petalCount": 24,
+        "segments": 4,
+        "petalArrangement": 1
+      }
+    },
+    {
+      "id": "lupin",
+      "name": "Lupin",
+      "scientific_name": "Lupinus polyphyllus",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "linear",
+      "description": "Dense spikes of blue-violet pea flowers over fans of finger-like leaves.",
+      "real_world": {
+        "height_m": "0.6-1.2"
+      },
+      "density_per_m2": 0.5,
+      "generated": {
+        "height": 0.82,
+        "radius": 0.17,
+        "vertices": 1872
+      },
+      "props": {
+        "stemLength": 0.8,
+        "stemWidth": 0.008,
+        "stemLean": 0.06,
+        "stemCurve": 0.05,
+        "leafLength": 0.16,
+        "leafLengthVariance": 0.03,
+        "leafWidth": 0.018,
+        "leafWidthVariance": 0.004,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.3,
+        "leafOutwardAngle": 1,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.035,
+        "petalWidth": 0.012,
+        "petalTipTaper": 0.4,
+        "petalCurl": 0.05,
+        "flowerRadius": 0.016,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.34,
+        "stemColorG": 0.5,
+        "stemColorB": 0.26,
+        "leafColorR": 0.22,
+        "leafColorG": 0.42,
+        "leafColorB": 0.2,
+        "petalColorR": 0.4,
+        "petalColorG": 0.34,
+        "petalColorB": 0.86,
+        "colorVariance": 0.05,
+        "petalPitch": 0.9,
+        "petalPitchOuter": 0.9,
+        "petalRadiusInner": 0.01,
+        "leafCount": 14,
+        "petalCount": 24,
+        "segments": 4,
+        "petalArrangement": 1
+      }
+    },
+    {
+      "id": "marigold",
+      "name": "Marigold",
+      "scientific_name": "Tagetes erecta",
+      "kind": "flower",
+      "generator": "rich",
+      "leaf_texture": "pinnate_fine",
+      "description": "Bushy plant with ferny leaves and full, ruffled orange-gold flower heads.",
+      "real_world": {
+        "height_m": "0.3-0.6"
+      },
+      "density_per_m2": 2,
+      "generated": {
+        "height": 0.42,
+        "radius": 0.11,
+        "vertices": 1260
+      },
+      "props": {
+        "stemLength": 0.4,
+        "stemWidth": 0.006,
+        "stemLean": 0.08,
+        "stemCurve": 0.05,
+        "leafLength": 0.09,
+        "leafLengthVariance": 0.02,
+        "leafWidth": 0.03,
+        "leafWidthVariance": 0.005,
+        "leafTipTaper": 0.15,
+        "leafAttachStart": 0,
+        "leafAttachEnd": 0.6,
+        "leafOutwardAngle": 1,
+        "leafOutwardVariance": 0.15,
+        "petalLength": 0.035,
+        "petalWidth": 0.012,
+        "petalTipTaper": 0.4,
+        "petalCurl": 0.1,
+        "flowerRadius": 0.015,
+        "bloomSize": 1,
+        "vMultiplier": 1,
+        "seed": 5,
+        "stemColorR": 0.32,
+        "stemColorG": 0.48,
+        "stemColorB": 0.2,
+        "leafColorR": 0.16,
+        "leafColorG": 0.38,
+        "leafColorB": 0.12,
+        "petalColorR": 0.98,
+        "petalColorG": 0.58,
+        "petalColorB": 0.06,
+        "colorVariance": 0.05,
+        "petalPitch": 1,
+        "petalPitchOuter": 1.3,
+        "petalRadiusInner": 0.008,
+        "leafCount": 10,
+        "petalCount": 24,
+        "segments": 3,
+        "petalArrangement": 1
+      }
+    }
+  ],
+  "habitats": [
+    {
+      "id": "lawn",
+      "name": "Lawn",
+      "size_m": 8,
+      "plants": [
+        {
+          "plant": "lawn_grass",
+          "density_per_m2": 70
+        },
+        {
+          "plant": "white_clover",
+          "density_per_m2": 14
+        },
+        {
+          "plant": "daisy",
+          "density_per_m2": 2.5
+        },
+        {
+          "plant": "dandelion",
+          "density_per_m2": 1
+        }
+      ]
+    },
+    {
+      "id": "meadow",
+      "name": "Wildflower meadow",
+      "size_m": 10,
+      "plants": [
+        {
+          "plant": "meadow_grass",
+          "density_per_m2": 14
+        },
+        {
+          "plant": "tussock_grass",
+          "density_per_m2": 0.5
+        },
+        {
+          "plant": "white_clover",
+          "density_per_m2": 6
+        },
+        {
+          "plant": "daisy",
+          "density_per_m2": 1.2
+        },
+        {
+          "plant": "poppy",
+          "density_per_m2": 1.2
+        },
+        {
+          "plant": "cornflower",
+          "density_per_m2": 1
+        },
+        {
+          "plant": "dandelion",
+          "density_per_m2": 0.6
+        },
+        {
+          "plant": "lavender",
+          "density_per_m2": 0.25
+        }
+      ]
+    },
+    {
+      "id": "wheat_field",
+      "name": "Wheat field",
+      "size_m": 8,
+      "plants": [
+        {
+          "plant": "wheat",
+          "density_per_m2": 26
+        },
+        {
+          "plant": "poppy",
+          "density_per_m2": 1
+        },
+        {
+          "plant": "cornflower",
+          "density_per_m2": 0.7
+        }
+      ]
+    },
+    {
+      "id": "cottage_garden",
+      "name": "Cottage garden",
+      "size_m": 8,
+      "plants": [
+        {
+          "plant": "lawn_grass",
+          "density_per_m2": 50
+        },
+        {
+          "plant": "lavender",
+          "density_per_m2": 2
+        },
+        {
+          "plant": "tulip",
+          "density_per_m2": 1.6
+        },
+        {
+          "plant": "daisy",
+          "density_per_m2": 2.5
+        },
+        {
+          "plant": "sunflower",
+          "density_per_m2": 0.25
+        },
+        {
+          "plant": "fern",
+          "density_per_m2": 0.5
+        },
+        {
+          "plant": "poppy",
+          "density_per_m2": 0.8
+        }
+      ]
+    },
+    {
+      "id": "dune",
+      "name": "Coastal dune",
+      "size_m": 10,
+      "plants": [
+        {
+          "plant": "marram_grass",
+          "density_per_m2": 9
+        },
+        {
+          "plant": "blue_fescue",
+          "density_per_m2": 1.5
+        },
+        {
+          "plant": "sedge",
+          "density_per_m2": 0.3
+        },
+        {
+          "plant": "plantain",
+          "density_per_m2": 0.6
+        }
+      ]
+    },
+    {
+      "id": "shade_garden",
+      "name": "Shade garden",
+      "size_m": 8,
+      "plants": [
+        {
+          "plant": "hosta",
+          "density_per_m2": 1.1
+        },
+        {
+          "plant": "fern",
+          "density_per_m2": 1.5
+        },
+        {
+          "plant": "bracken",
+          "density_per_m2": 0.2
+        },
+        {
+          "plant": "foxglove",
+          "density_per_m2": 0.5
+        },
+        {
+          "plant": "sedge",
+          "density_per_m2": 2.5
+        },
+        {
+          "plant": "plantain",
+          "density_per_m2": 1
+        }
+      ]
+    },
+    {
+      "id": "ornamental_border",
+      "name": "Ornamental border",
+      "size_m": 8,
+      "plants": [
+        {
+          "plant": "lawn_grass",
+          "density_per_m2": 30
+        },
+        {
+          "plant": "fountain_grass",
+          "density_per_m2": 2.5
+        },
+        {
+          "plant": "pampas_grass",
+          "density_per_m2": 0.15
+        },
+        {
+          "plant": "blue_fescue",
+          "density_per_m2": 3
+        },
+        {
+          "plant": "lavender",
+          "density_per_m2": 1.5
+        },
+        {
+          "plant": "marigold",
+          "density_per_m2": 3
+        },
+        {
+          "plant": "lupin",
+          "density_per_m2": 1
+        }
+      ]
+    },
+    {
+      "id": "oat_barley_field",
+      "name": "Oat and barley field",
+      "size_m": 8,
+      "plants": [
+        {
+          "plant": "oats",
+          "density_per_m2": 14
+        },
+        {
+          "plant": "barley",
+          "density_per_m2": 14
+        },
+        {
+          "plant": "poppy",
+          "density_per_m2": 0.8
+        },
+        {
+          "plant": "cornflower",
+          "density_per_m2": 0.6
+        }
+      ]
+    },
+    {
+      "id": "woodland_floor",
+      "name": "Woodland floor",
+      "size_m": 10,
+      "plants": [
+        {
+          "plant": "sedge",
+          "density_per_m2": 2.5
+        },
+        {
+          "plant": "fern",
+          "density_per_m2": 0.8
+        },
+        {
+          "plant": "bracken",
+          "density_per_m2": 0.5
+        },
+        {
+          "plant": "buttercup",
+          "density_per_m2": 2
+        },
+        {
+          "plant": "foxglove",
+          "density_per_m2": 0.2
+        },
+        {
+          "plant": "plantain",
+          "density_per_m2": 2
+        },
+        {
+          "plant": "white_clover",
+          "density_per_m2": 3
+        }
+      ]
+    },
+    {
+      "id": "wetland_edge",
+      "name": "Wetland edge",
+      "size_m": 10,
+      "plants": [
+        {
+          "plant": "reed",
+          "density_per_m2": 4.5
+        },
+        {
+          "plant": "tussock_grass",
+          "density_per_m2": 0.5
+        },
+        {
+          "plant": "fern",
+          "density_per_m2": 0.4
+        },
+        {
+          "plant": "meadow_grass",
+          "density_per_m2": 4
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+# Line endings: the repository stores LF. A checkout on Windows / WSL (or an editor that
+# writes CRLF) no longer shows every file as modified: git normalises CRLF to LF when it
+# compares and commits, and the working tree is written with LF.
+#
+# Files that already hold CRLF in the repository (soma/game/game_play.js,
+# soma/human/human_system.js) are left as they are by git until they are touched.
+* text=auto eol=lf
+
+# Windows scripts need CRLF to run from cmd.exe
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary data: never converted, never diffed as text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.gz binary
+*.glb binary
+*.wasm binary
+*.bin binary
+*.bpak binary
+*.npy binary
+*.mrc binary
+*.tft binary
+*.primfit binary
+*.somapart binary
+*.somamesh binary
+*.hlib binary

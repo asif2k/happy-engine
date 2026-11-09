@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>happy_system demos</title>
+<style>
+  :root { --bg: #f6f6f4; --card: #ffffff; --ink: #1c1d1f; --muted: #5d6166; --line: #dcdcd6; --accent: #1f5fbf; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #17181a; --card: #202225; --ink: #ecece8; --muted: #a2a6ab; --line: #34373b; --accent: #7aaeff; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 16px 56px; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  h2 { font-size: 17px; margin: 34px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  p { margin: 0 0 10px; }
+  .lead { color: var(--muted); max-width: 70ch; }
+  code { font: 13px ui-monospace, Consolas, monospace; background: color-mix(in srgb, var(--ink) 8%, transparent); padding: 1px 5px; border-radius: 4px; }
+  pre { margin: 10px 0 0; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+  .card img { display: block; width: 100%; aspect-ratio: 11 / 7; object-fit: cover; background: #888; }
+  .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .body h3 { margin: 0; font-size: 16px; }
+  .body h3 a { color: var(--accent); text-decoration: none; }
+  .body h3 a:hover { text-decoration: underline; }
+  .body p { color: var(--muted); font-size: 14px; margin: 0; }
+  .params { font-size: 13px; color: var(--muted); }
+  .links { margin-top: auto; padding-top: 6px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .links a { color: var(--accent); text-decoration: none; }
+  .links a:hover { text-decoration: underline; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 28px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>happy_system demos</h1>
+  <p class="lead">One page for each feature of the system. Each is a real page of the engine: it draws in WebGL2 and its numbers are in <code>window.happy_demo</code>. The pictures below were taken from the pages themselves in headless Chrome (software rendering, so they run at about 8 fps there; a real GPU is much faster).</p>
+  <p class="lead">The pages are bundled and served by the engine's own dev server. From the repo root:</p>
+  <pre>node packing.js -serve default
+# then open http://localhost:8099/demos/index.html</pre>
+
+  <h2>Creatures</h2>
+  <div class="grid" id="creatures"></div>
+  <h2>World: terrain, city, vegetation</h2>
+  <div class="grid" id="world"></div>
+  <h2>Engine: rendering, physics, particles</h2>
+  <div class="grid" id="engine"></div>
+  <h2>AI</h2>
+  <div class="grid" id="ai"></div>
+
+  <p class="note">Every page hides the engine's own numbers panel; add <code>?stats=1</code> to show it. Left drag turns the camera, right drag pans, the wheel zooms; the terrain and city pages also fly with W A S D (Shift: fast), Q / E down / up. People are drawn from the palette (no painted skin). <code>emu.js</code> and <code>ostrich.js</code> in <code>system/creatures/</code> do not mesh (an sdf error in the files) and are left out.</p>
+</main>
+
+<script>
+  var DEMOS = {
+    creatures: [
+      { id: "creatures_demo", title: "A crowd of creatures", img: "creatures_demo", text: "60 creatures of 12 kinds from system/creatures/ (people, bear, jaguar, horse, rhino, T. rex, elephant, spider) wander on a lit grid floor with shadows.", params: "?files=knight,wolf_spider &nbsp; ?n=5 &nbsp; ?radius=18 &nbsp; ?speed=1.3 &nbsp; ?atmosphere=1 &nbsp; ?seed=" },
+      { id: "humans_demo", title: "Procedural people", img: "humans_demo", text: "12 people of the lite human: builds, ages, tones, clothes, hair, beards and a mutated pair, walking in place.", params: "?walk=0|1|2 &nbsp; ?rows= &nbsp; ?n= &nbsp; ?wire=1" },
+      { id: "gaits_actions_demo", title: "Gaits and actions", img: "gaits_actions_demo", text: "12 bodies (4 people, wolf, horse, bear, owl, T. rex, parasaurolophus, spider, ant) switch between gait styles and play actions of the motion libraries through their own worker functions.", params: "?mode=both|gait|action &nbsp; ?gait= &nbsp; ?set=designed_dance&amp;action=dance_disco" },
+      { id: "sdf_demo", title: "SDF creatures", img: "sdf_demo", text: "12 creatures made from sdf definitions by the built-in mesher (golem, fly, ladybird, bee, ant, spiders, beetle, android, mummy, ogre, knight), with their texture maps.", params: "?wire=1 &nbsp; ?files= &nbsp; ?cols= &nbsp; ?size= &nbsp; ?dist=", more: [["wireframe", "sdf_demo.html?wire=1&files=android,ladybird&cols=2&size=1.7&dist=3.2", "sdf_demo_wireframe"]] },
+      { id: "vehicles_demo", title: "Vehicles", img: "vehicles_demo", text: "Hatchback, sedan, pickup, sports car and jeep drive their own lane of a circular track (suspension, engine, gears; the jeep is the simple kind).", params: "?cars= &nbsp; ?omega= &nbsp; ?cam=chase" }
+    ],
+    world: [
+      { id: "terrain_demo", title: "Procedural terrain", img: "terrain_demo", text: "A heightmap island made by the worker: grass, rock and snow bands from 20 ground materials, the sea, the sky, the sun and cascaded shadows. 20 presets.", params: "?preset=alps &nbsp; ?seed= &nbsp; ?size=4096 &nbsp; ?cam=yaw,pitch,distance &nbsp; ?sun=az,el &nbsp; ?atmosphere=0", more: [["alps", "terrain_demo.html?preset=alps&seed=2", "terrain_demo_alps"], ["from above", "terrain_demo.html?cam=35,-32,1700&sun=60,35", "terrain_demo_overview"]] },
+      { id: "city_demo", title: "City on terrain (grid)", img: "city_demo", text: "A generated city on graded terrain: a box on every lot, roads drawn as a terrain-shader overlay, the ground cut and filled under them, trees in the yards, a road out to the next place.", params: "?layout=grid|organic|radial|suburb|village &nbsp; ?seed=3 &nbsp; ?kind= &nbsp; ?radius= &nbsp; ?places=2 &nbsp; ?preset=river_plains", more: [["radial", "city_demo.html?layout=radial&seed=5", "city_demo_radial"], ["village", "city_demo.html?layout=village&seed=3", "city_demo_village"]] },
+      { id: "city_demo", title: "Bridges", img: "city_demo_bridge", text: "Places joined by roads; where a road meets the river or a gorge a bridge deck (a mesh and its physics boxes) carries it.", params: "?places=3&amp;seed=3&amp;look=784,538&amp;cam=25,-30,150", url: "city_demo.html?places=3&seed=3&look=784,538&cam=25,-30,150" },
+      { id: "vegetation_demo", title: "Trees and plants", img: "vegetation_demo", text: "About 46,000 trees and plants generated on the terrain by the vegetation generator (billboards at a distance, meshes near), with cast shadows.", params: "?preset=tropical&amp;seed=2&amp;size=2048 &nbsp; ?boxes=1" }
+    ],
+    engine: [
+      { id: "render_demo", title: "Deferred rendering", img: "render_demo", text: "Deferred shading with cascaded shadows and the atmosphere: a pillar, metal spheres, capsules and boxes on the grid floor, lit by a sun you can place.", params: "?atmosphere=0|1 &nbsp; ?shadows=0 &nbsp; ?sun_azimuth=220 &nbsp; ?sun_elevation=20" },
+      { id: "physics_demo", title: "Physics", img: "physics_demo", text: "Rain of bodies, a 39-brick wall knocked down by a ball, a pendulum, a joint chain, a hinged door, rays, and knights that are pushed, shot and ragdolled.", params: "?wrecker=0 &nbsp; ?creatures=0 &nbsp; ?until=9 &nbsp; ?gravity= &nbsp; ?detail=1" },
+      { id: "particles_demo", title: "GPU particles", img: "particles_demo", text: "Campfire, torch, black smoke, fountain, welding, magic, steam, a comet trail and an explosion every few seconds: about 6,000 particles alive, soft against the geometry.", params: "?until=1.5&amp;freeze=1 &nbsp; ?rain=1 &nbsp; ?only= &nbsp; ?boom_every= &nbsp; ?soft=0" }
+    ],
+    ai: [
+      { id: "ai_demo", title: "Creatures living by their AI", img: "ai_demo", text: "24 people and animals live in a hosted yard (walls, crates, zones) by the behaviour blocks of their own minds: they wander, avoid, and run from a scare sent partway through.", params: "?seconds=45 &nbsp; ?files= &nbsp; ?n= &nbsp; ?scare=0 &nbsp; ?zombie=1" },
+      { id: "ai_blocks_demo", title: "The AI blocks", img: "ai_blocks_demo", text: "Lists the 35 blocks and the 19 ready-made minds, and runs one mind on a crowd of six.", params: "?set=townsperson &nbsp; ?body=grandmother &nbsp; ?n=6" }
+    ]
+  };
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  Object.keys(DEMOS).forEach(function (sec) {
+    var host = document.getElementById(sec);
+    DEMOS[sec].forEach(function (d) {
+      var url = d.url || (d.id + ".html");
+      var card = document.createElement("div"); card.className = "card";
+      var links = '<a href="' + url + '">open</a>';
+      (d.more || []).forEach(function (m) { links += '<a href="' + m[1] + '">' + esc(m[0]) + '</a> <a href="screenshots/' + m[2] + '.png">(picture)</a>'; });
+      links += '<a href="' + d.id + '.js">source</a>';
+      card.innerHTML =
+        '<a href="' + url + '"><img loading="lazy" alt="' + esc(d.title) + '" src="screenshots/' + d.img + '.png"></a>' +
+        '<div class="body"><h3><a href="' + url + '">' + esc(d.title) + '</a></h3><p>' + esc(d.text) + '</p>' +
+        '<div class="params"><code>' + d.params.replace(/&nbsp;/g, " ") + '</code></div>' +
+        '<div class="links">' + links + '</div></div>';
+      host.appendChild(card);
+    });
+  });
+</script>
+</body>
+</html>
