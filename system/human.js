@@ -211,6 +211,9 @@ packing()("human_lite_mutate", function human_lite_mutate() {
   //     families    a list of "reshape" (proportions: bones longer, thicker, bent; sliders; size), "push" (muzzle, brow, skull), "swell" (hump, dewlap, jowls, chest: flesh that is pushed out and, with a soft tissue bone in it, moves),
   //                 "grow" (new bones with a skin: a tail that swings, horns, tusks, spines), "colour" (the skin's tint)                      default: all
   //     symmetric   true (default): both sides alike; false: each side its own                                                                             budget     0 .. 1: the share of what may grow (1: 1000 triangles, 40 bones)
+  //     genes       the body's parts SET BY HAND (on top of the dice, or alone: with `genes` and no `iterations` the dice are not thrown): { bones: { "hand.*": { length: 1.5, girth: 1.6, bend: 0, lean: 0 }, "foot.*": 1.3, "upperarm.*": { girth: 1.5 } ... },
+  //                 size: 1.1, push: { muzzle, brow, skull } (metres), swell: { chest: { r: 0.15, h: 0.06 }, hump, dewlap, jowls } (a bulge: its radius and height, metres) }. A bone's name ends in `.L` / `.R` or `.*` for both (upperarm.*, lowerarm.*, hand.*, fingers1.*, fingers2.*,
+  //                 thumb.*, thigh.*, shin.*, foot.*, toe.*, clavicle.*, ear.*, and spine1, spine2, spine3, neck, head, jaw); a number instead of an object is a factor for the length AND the girth; length and girth are factors (1: as it is), bend and lean degrees. Every value is held to what the bone may be (LIM, CAP).
   //   Every number is held to its range and what is none is left out, each said in `notes` (the creature is made offline of whatever it is given); `strict` of the definition makes the first mistake an Error.
   //
   //   M.clean(spec, tag, notes) -> the spec in full, or null (no mutation)                         M.evolve(api, model, spec, p) -> { genome, p, applied, tags, kind }: the dice, `iterations` times
@@ -248,7 +251,7 @@ packing()("human_lite_mutate", function human_lite_mutate() {
     const bad = function (msg) { if (notes) { notes.push(tag + "mutate: " + msg); return; } fail(tag + "mutate: " + msg); };
     if (spec === true) spec = {}; else if (typeof spec === "number") spec = { iterations: spec };
     if (typeof spec !== "object" || Array.isArray(spec)) { bad("mutate is true, a number of iterations or { seed, iterations, strength, toward, families, symmetric, budget }" + (notes ? ": left out" : "")); return null; }
-    const out = { seed: 1, iterations: 3, strength: 0.5, toward: null, families: FAMILIES.slice(), symmetric: true, budget: 1 };
+    const out = { seed: 1, iterations: 3, strength: 0.5, toward: null, families: FAMILIES.slice(), symmetric: true, budget: 1, genes: null };
     const num = function (k, v, lo, hi, whole) {
       if (notes && typeof v === "string" && v.trim() !== "" && isFinite(+v)) v = +v;
       if (typeof v !== "number" || !isFinite(v)) { bad(k + " is a number" + (notes ? ": left out" : "")); return undefined; }
@@ -261,6 +264,7 @@ packing()("human_lite_mutate", function human_lite_mutate() {
       else if (k === "iterations") { const n = num(k, v, 0, MAX_ITER, true); if (n !== undefined) out.iterations = n; }
       else if (k === "strength") { const n = num(k, v, 0, 1); if (n !== undefined) out.strength = n; }
       else if (k === "budget") { const n = num(k, v, 0, 1); if (n !== undefined) out.budget = n; }
+      else if (k === "genes") { if (v && typeof v === "object" && !Array.isArray(v)) out.genes = v; else bad("genes is { bones, size, push, swell }" + (notes ? ": left out" : "")); }
       else if (k === "symmetric") { if (typeof v === "boolean") out.symmetric = v; else bad("symmetric is true or false" + (notes ? ": left out" : "")); }
       else if (k === "toward") { if (v === null || v === "none") out.toward = null; else if (ARCHETYPES.indexOf(v) >= 0) out.toward = v; else bad("no kind '" + v + "' to evolve toward (" + ARCHETYPES.join(", ") + ")" + (notes ? ": left out" : "")); }
       else if (k === "families") {
@@ -269,8 +273,9 @@ packing()("human_lite_mutate", function human_lite_mutate() {
         if (ok.length !== v.length) bad("families: no family '" + v.filter(function (f) { return FAMILIES.indexOf(f) < 0; }).join("', '") + "' (" + FAMILIES.join(", ") + ")" + (notes ? ": left out" : ""));
         out.families = ok;
       }
-      else bad("unknown field '" + k + "' (seed, iterations, strength, toward, families, symmetric, budget)" + (notes ? ": left out" : ""));
+      else bad("unknown field '" + k + "' (seed, iterations, strength, toward, families, symmetric, budget, genes)" + (notes ? ": left out" : ""));
     });
+    if (out.genes && spec.iterations === undefined) out.iterations = 0;                                // (genes alone: the dice are not thrown)
     return out;
   }
 
@@ -435,6 +440,36 @@ packing()("human_lite_mutate", function human_lite_mutate() {
     return { tags: tags, kind: kind };
   }
 
+  // ---- the genes set by hand (spec.genes): bones' length, girth, bend and lean, the pushes, the swellings, the size; each held to its limit, a name that is no bone said in `applied`
+  function apply_genes(g, genes, applied, pn) {
+    const say = function (what) { applied.push({ op: "genes", family: "genes", what: what, m: 1, done: true }); };
+    const bones = genes.bones && typeof genes.bones === "object" ? genes.bones : {};
+    Object.keys(bones).forEach(function (key) {
+      let v = bones[key];
+      if (typeof v === "number") v = { length: v, girth: v };
+      if (!v || typeof v !== "object") { say("bone '" + key + "': a factor or { length, girth, bend, lean }: left out"); return; }
+      const names = /\.\*$/.test(key) ? [key.replace("*", "L"), key.replace("*", "R")] : [key];
+      names.forEach(function (n) {
+        const b = gene(g, n);
+        ["length", "girth", "bend", "lean"].forEach(function (f) {
+          if (v[f] === undefined) return;
+          if (typeof v[f] !== "number" || !isFinite(v[f])) { say("bone '" + n + "': " + f + " is a number: left out"); return; }
+          const lim = limit_of(n, f); b[f] = clamp(v[f], lim[0], lim[1]);
+        });
+        say("set " + n + " (length " + b.length + ", girth " + b.girth + ", bend " + b.bend + ", lean " + b.lean + ")");
+      });
+    });
+    if (typeof genes.size === "number" && isFinite(genes.size)) { pn.scale = clamp(pn.scale * genes.size, 0.4, 2.5); g.size = pn.scale; say("size " + g.size); }
+    if (genes.push && typeof genes.push === "object") Object.keys(PUSH_MAX).forEach(function (k) { if (typeof genes.push[k] === "number") { g.push[k] = clamp(genes.push[k], 0, PUSH_MAX[k]); say("pushed its " + k + " " + g.push[k]); } });
+    if (genes.swell && typeof genes.swell === "object") Object.keys(genes.swell).forEach(function (k) {
+      const d = SWELLS[k], v = genes.swell[k];
+      if (!d) { say("no swelling '" + k + "' (" + Object.keys(SWELLS).join(", ") + "): left out"); return; }
+      if (v === null || v === false) { delete g.swell[k]; return; }
+      const r = typeof v.r === "number" ? v.r : d.r[1], h = typeof v.h === "number" ? v.h : d.h[1];
+      g.swell[k] = { r: clamp(r, d.r[0] * 0.5, d.r[1] * 1.6), h: clamp(h, 0, d.h[1] * 1.8) }; say("swelled its " + k);
+    });
+  }
+
   // ---- the dice, `iterations` times. -> { genome, p (the parameters with what drifted), applied: [{ op, family, what, m }], tags, kind }
   function evolve(api, model, spec, p) {
     const u = dice(spec.seed), g = fresh(), pn = Object.assign({}, p), applied = [], arch = spec.toward ? ARCH[spec.toward] : null;
@@ -449,6 +484,7 @@ packing()("human_lite_mutate", function human_lite_mutate() {
       const what = op[3]({ g: g, u: u, m: m, sym: spec.symmetric, p: pn, sliders: sliders, budget: spec.budget, arch: arch });
       applied.push({ op: op[0], family: op[1], what: what === null ? "could not (nothing more may grow)" : what, m: round(m, 2), done: what !== null });
     }
+    if (spec.genes) apply_genes(g, spec.genes, applied, pn);
     // the genome is finished: a foot that is bent down (the heel up) has its toes bent back by as much (all that the leg bends: the thigh's, the shin's, the foot's), so that they lie as they lie on a person, flat on the floor and the creature stands on them, as a dog does, and not on the tips of them
     ["L", "R"].forEach(function (side) {
       const f = g.bones["foot." + side]; if (!f || f.bend <= 1) return;
@@ -3004,7 +3040,7 @@ void resolve_shading_attributes(inout Material mat){
     if (def.hide_covered !== undefined && typeof def.hide_covered !== "boolean") bad("hide_covered is true (the default: the skin that the clothes cover is not drawn) or false" + (strict ? "" : ": it is true"));
     let p = params(model, def.shape, who, notes);
     const lk = look.check(def.look, who, notes);
-    const plan = mut && mut.iterations > 0 ? mutate.evolve(MU_API, model, mut, p) : null;
+    const plan = mut && (mut.iterations > 0 || mut.genes) ? mutate.evolve(MU_API, model, mut, p) : null;
     if (plan) p = plan.p;
     const sh = shape(model, p);
     // THE FACE WARP (def.face_warp, human_face_shape.js: { amount, t: { cheek: [half width, b] ... } } in the frame of the eyes, what the user's shape markers say): what the face sliders cannot make (they move the head by a few millimetres)
